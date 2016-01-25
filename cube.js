@@ -1,39 +1,33 @@
+/**
+ *  This object manages user requests. It is responsible for answering 
+ *  the information requested from the view layer delegating other 
+ *  responsabilities to the rest of objects.
+ */
 function controller() {
-    var input, dataValidated, text;
+    var input, dataValidated, output;
     input = document.getElementById("input").value;
-    dataValidated = validateData(input);
-    if (dataValidated.status) {
-        text = "Input OK";
-        // console.log("dataValidated: \n",dataValidated);
+    var parsedData = parseData(input)
+    if (parsedData.status) {
+        output = "Input OK";
+        // console.log(" controller parsedData.data: \n",parsedData.data);
+        createArrow(parsedData.data);
     } else {
-        alert("Input not valid. Copy, paste and correct your input: " + input);
+        alert(parseData.error + "\n" + input);
         newCalculation();
     }
-    document.getElementById("output").innerHTML = text;
+    document.getElementById("output").innerHTML = output;
 }
 
+/**
+ *  Sends the command to the view to reload a new UI.
+ */
 function newCalculation() {
     location.reload();
 }
 
-function validateData(data) {
-    var response = {'status':true,
-            'data':[]
-        }
-    var commands = data.split('\n');
-    // console.log("commands: \n", commands);
-    var totalTests = commands[0];
-    if (!isPositiveInteger(totalTests)) {
-        response.status = false;
-        console.log("response1: \n", response);
-        return response;
-    }
-    var response = parseData(commands);
-    console.log("response2: \n", response);
-    return response;
-    
-}
-
+/**
+ *  Validates if a variable is a positive integer.
+ */
 function isPositiveInteger(num){
     // console.log("typeof num: ",typeof num);
     // console.log("num: ",num);
@@ -44,18 +38,35 @@ function isPositiveInteger(num){
     }
 }
 
-function parseData(commands) {
+/**
+ *  This object parses the user input: Validates the number of test-cases,
+ *  the dimension of the matrix and the number of operations, then sets 
+ *  up and returns an object with the information of every operation to be 
+ *  calculated over the matrix.
+ */
+function parseData(data) {
     var response = {'status':true,
+            'error': '',
             'data':[]
         }
-    var tests = parseInt(commands[0]),
-        index = 1,
-        dimensionAndOperations, 
+    var dimensionAndOperations, 
         dimension, 
-        operationsPerTest;
+        operationsPerTest, 
+        index = 1,
+        commands = data.split('\n');
+    // console.log("commands: \n", commands);
+    var totalTests = commands[0];
+    if (!isPositiveInteger(totalTests)) {
+        response.status = false;
+        response.error = "Invalid input data."
+        // console.log("response0: \n", response);
+        return response;
+    } else {
+        totalTests = parseInt(totalTests);
+    }
     do {
         dimensionAndOperations = commands[index].split(' ');
-        console.log("parseData dimensionAndOperations: \n", dimensionAndOperations);
+        // console.log("parseData dimensionAndOperations: \n", dimensionAndOperations);
         dimension = dimensionAndOperations[0];
         operationsPerTest = dimensionAndOperations[1];
         lastQueryIndex = index + parseInt(operationsPerTest);
@@ -69,14 +80,18 @@ function parseData(commands) {
             'queries': []
         };
         for(var i = index + 1; i <= lastQueryIndex; i++) {
-            console.log("parseData i: \n", i);
             testCase.queries.push(commands[i]);
         }
         response.data.push(testCase);
         index = lastQueryIndex + 1;
-        tests--;
+        totalTests--;
     }
-    while (tests >= 1);
+    while (totalTests >= 1);
     // console.log("parseData response2: \n", response);
     return response;
+}
+
+function createArrow(testCase) {
+    console.log('testCase: \n',testCase);
+    return true;
 }
