@@ -147,9 +147,12 @@ function fenwick(dimension) {
         // console.log('index: \n',index);
         // console.log('val: \n',val);
         if (this.fenwickMatrix.length == 0) {
-            this.fenwickMatrix = createMatrix(this.dimension,this.fenwickMatrix);
+            this.fenwickMatrix = createMatrix(this.dimension);
         }
         for (var row = 0; row < this.fenwickMatrix.length; ++row) {
+            if (index >= this.fenwickMatrix[row].length) {
+                index -= 1;
+            }
             this.fenwickMatrix[row][index] += parseInt(val); 
             index >>= 1; 
         } 
