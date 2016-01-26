@@ -11,21 +11,35 @@ function controller() {
         for (var i = 0; i < parsedData.data.length; i++) {
             var dimension = parsedData.data[i].dimension;
             var operations = parseOperation(dimension, parsedData.data[i].queries);
+            var flagForDiagonal = operations.pop();
             // console.log("operations: \n",operations);
-            var matrix = new fenwick(dimension);
-            // var diagonal = new fenwickDiagonal(dimension);
-            for (var j = 0; j < operations.length; j++) {
-                var sum1, sum2, sum;
-                if (operations[j].type == 'UPDATE') {
-                    matrix.update(operations[j].x, operations[j].y, operations[j].z, operations[j].w);
-                } else {
-                    sum1 = matrix.summation(operations[j].x1 - 1, operations[j].y1 - 1, operations[j].z1 - 1);
-                    sum2 = matrix.summation(operations[j].x2, operations[j].y2, operations[j].z2);
-                    sum = sum2 - sum1;
-                    output += sum + "\n";
+            if (flagForDiagonal) {
+                var matrix = new fenwickDiagonal(dimension);
+                for (var j = 0; j < operations.length; j++) {
+                    var sum1, sum2, sum;
+                    if (operations[j].type == 'UPDATE') {
+                        matrix.update(operations[j].x, operations[j].w);
+                    } else {
+                        sum1 = matrix.summation(operations[j].x1 - 1);
+                        sum2 = matrix.summation(operations[j].x2);
+                        sum = sum2 - sum1;
+                        output += sum + "\n";
+                    }
+                }
+            } else {
+                var matrix = new fenwick(dimension);
+                for (var j = 0; j < operations.length; j++) {
+                    var sum1, sum2, sum;
+                    if (operations[j].type == 'UPDATE') {
+                        matrix.update(operations[j].x, operations[j].y, operations[j].z, operations[j].w);
+                    } else {
+                        sum1 = matrix.summation(operations[j].x1 - 1, operations[j].y1 - 1, operations[j].z1 - 1);
+                        sum2 = matrix.summation(operations[j].x2, operations[j].y2, operations[j].z2);
+                        sum = sum2 - sum1;
+                        output += sum + "\n";
+                    }
                 }
             }
-            // fenwick(parsedData.data[i].dimension).createMatrix;
             // console.log("matrix: \n",matrix.create());
         }
     } else {
@@ -108,7 +122,11 @@ function parseInput(data) {
  *  This function parses the user input queries per test-case.
  */
 function parseOperation(dimension, queries) {
-    var operation = [];
+    var operation = [],
+        flagForDiagonal = true,
+        flagUpdate = true,
+        flagQuery1 = true,
+        flagQuery2 = true;
     for (var i = 0; i < queries.length; i++) {
         query = queries[i].split(" ");
         if (query[0] == 'UPDATE' || query[0] == 'Update' || query[0] == 'update') {
@@ -118,6 +136,9 @@ function parseOperation(dimension, queries) {
                 'y': query[2], 
                 'z': query[3], 
                 'w': query[4]
+            }
+            if (flagForDiagonal) {
+                flagUpdate = validateEquidistance(query[1], query[2], query[3]);
             }
         } else {
             operation[i] = {
@@ -129,9 +150,29 @@ function parseOperation(dimension, queries) {
                 'y2': query[5],
                 'z2': query[6]
             }
+            if (flagForDiagonal) {
+                flagQuery1 = validateEquidistance(query[1], query[2], query[3]);
+                flagQuery2 = validateEquidistance(query[4], query[5], query[6]);
+            }
+        }
+        if (!flagUpdate || !flagQuery1 || !flagQuery2) {
+            flagForDiagonal = false;
         }
     }
+    operation[queries.length] = flagForDiagonal;
     return operation;
+}
+
+/**
+ *  This function validates if a coordinate belongs to the diagonal 
+ *  of the 3D matrix.
+ */
+function validateEquidistance(x, y, z) {
+    if (x == y && y == z) {
+        return true;
+    } else {
+        return false;
+    }
 }
 
 /**
@@ -141,7 +182,7 @@ function parseOperation(dimension, queries) {
  *  given the diagonal coordinates.
  */
 function fenwickDiagonal(dimension) {
-    // console.log('dimension: \n',dimension);
+    // console.log('diagonal: \n');
     this.dimension = dimension;
     this.fenwickMatrix = [];
     this.update = function(index, val) {
@@ -191,7 +232,7 @@ function fenwickDiagonal(dimension) {
  *  given its coordinates.
  */
 function fenwick(dimension) {
-    // console.log('dimension: \n',dimension);
+    // console.log('matrix: \n');
     this.dimension = dimension;
     this.fenwickMatrix = [];
     this.update = function(x, y, z, val) {
