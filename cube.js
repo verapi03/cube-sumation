@@ -4,8 +4,8 @@
  *  responsabilities to the rest of objects.
  */
 function controller() {
-    var input, dataValidated, output;
-    input = document.getElementById("input").value;
+    var dataValidated, output = '';
+    var input = document.getElementById("input").value;
     var parsedData = parseInput(input)
     if (parsedData.status) {
         for (var i = 0; i < parsedData.data.length; i++) {
@@ -14,16 +14,19 @@ function controller() {
             // console.log("operations: \n",operations);
             var matrix = new fenwick(dimension);
             for (var j = 0; j < operations.length; j++) {
+                var sum1, sum2, sum;
                 if (operations[j].type == 'UPDATE') {
                     matrix.update(operations[j].x, operations[j].w);
                 } else {
-                    matrix.summation(operations[j].x1, operations[j].x2);
+                    sum1 = matrix.summation(operations[j].x1 - 1);
+                    sum2 = matrix.summation(operations[j].x2);
+                    sum = sum2 - sum1;
+                    output += sum + "\n";
                 }
             }
             // fenwick(parsedData.data[i].dimension).createMatrix;
             // console.log("matrix: \n",matrix.create());
         }
-        output = "Input OK";
     } else {
         alert(parseInput.error + "\n" + input);
         newCalculation();
@@ -152,13 +155,13 @@ function fenwick(dimension) {
         } 
         // console.log('update this.fenwickMatrix: \n',this.fenwickMatrix);
     }
-    this.summation = function(x1, x2) { 
+    this.summation = function(x) { 
         var sum = 0; 
         for (var row = 0; row < this.fenwickMatrix.length; ++row) { 
-            if (x2&1) {
-                sum += this.fenwickMatrix[row][x2 - 1]; 
+            if (x&1) {
+                sum += this.fenwickMatrix[row][x - 1]; 
             }
-            x2 >>= 1; 
+            x >>= 1; 
         } 
         return sum; 
     }
