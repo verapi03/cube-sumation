@@ -13,13 +13,14 @@ function controller() {
             var operations = parseOperation(dimension, parsedData.data[i].queries);
             // console.log("operations: \n",operations);
             var matrix = new fenwick(dimension);
+            // var diagonal = new fenwickDiagonal(dimension);
             for (var j = 0; j < operations.length; j++) {
                 var sum1, sum2, sum;
                 if (operations[j].type == 'UPDATE') {
-                    matrix.update(operations[j].x, operations[j].w);
+                    matrix.update(operations[j].x, operations[j].y, operations[j].z, operations[j].w);
                 } else {
-                    sum1 = matrix.summation(operations[j].x1 - 1);
-                    sum2 = matrix.summation(operations[j].x2);
+                    sum1 = matrix.summation(operations[j].x1 - 1, operations[j].y1 - 1, operations[j].z1 - 1);
+                    sum2 = matrix.summation(operations[j].x2, operations[j].y2, operations[j].z2);
                     sum = sum2 - sum1;
                     output += sum + "\n";
                 }
@@ -134,12 +135,12 @@ function parseOperation(dimension, queries) {
 }
 
 /**
- *  This object manages the operations of creation of a fenwick matrix, 
- *  update it with a new weight for a coordinate entered by the user
- *  as a requested operation and also calculates the summation between 
- *  two coordinates of the matrix.
+ *  This object does the same as "fenwick" but calculating only the 
+ *  diagonal of the of the fenwick matrix, i.e. it updates the  
+ *  diagonal with new weights and also calculates the sum of a prefix 
+ *  given the diagonal coordinates.
  */
-function fenwick(dimension) {
+function fenwickDiagonal(dimension) {
     // console.log('dimension: \n',dimension);
     this.dimension = dimension;
     this.fenwickMatrix = [];
@@ -177,6 +178,79 @@ function fenwick(dimension) {
             }
             fenwickMatrix.push(arr);
             dimension >>= 1;
+        }
+        // console.log('createMatrix fenwickMatrix: \n',fenwickMatrix);
+        return fenwickMatrix;
+    };
+}
+
+/**
+ *  This object manages the operations of creation of a fenwick matrix, 
+ *  update it with a new weight for a coordinate entered by the user
+ *  as a requested operation and also calculates the sum of a prefix 
+ *  given its coordinates.
+ */
+function fenwick(dimension) {
+    // console.log('dimension: \n',dimension);
+    this.dimension = dimension;
+    this.fenwickMatrix = [];
+    this.update = function(x, y, z, val) {
+        if (this.fenwickMatrix.length == 0) {
+            this.fenwickMatrix = createMatrix(this.dimension);
+        }
+        while (z <= this.dimension) {
+            while (x <= this.dimension) {
+                while (y <= this.dimension) {
+                    if (y >= this.dimension) {
+                        y -= 1;
+                    }
+                    if (x >= this.dimension) {
+                        x -= 1;
+                    }
+                    if (z >= this.dimension) {
+                        z -= 1;
+                    }
+                    this.fenwickMatrix[x][y][z] += parseInt(val);
+                    // console.log('update this.fenwickMatrix[x][y][z]: \n',this.fenwickMatrix[x][y][z]);
+                    y |= y + 1;
+                }
+                x |= x + 1;
+            }
+            z |= z + 1;
+        }
+        // console.log('update this.fenwickMatrix: \n',this.fenwickMatrix);
+    }
+    this.summation = function(x, y, z) { 
+        var sum = 0; 
+        while (z > 0) {
+            while (x > 0) {
+                while (y > 0) {
+                    sum += this.fenwickMatrix[x - 1][y - 1][z - 1]; 
+                    y &= y - 1;
+                }
+                x &= x - 1;
+            }
+            z &= z - 1;
+        }
+        return sum; 
+    }
+    function createMatrix(dimension) {
+        var fenwickMatrix = [],
+            matrixY = [],
+            matrixZ = [],
+            dimensionY = dimension,
+            dimensionZ = dimension;
+        while (dimensionZ >= 1) {
+            matrixZ.push(0);
+            dimensionZ--;
+        }
+        while (dimensionY >= 1) {
+            matrixY.push(matrixZ);
+            dimensionY--;
+        }
+        while (dimension >= 1) {
+            fenwickMatrix.push(matrixY);
+            dimension--;
         }
         // console.log('createMatrix fenwickMatrix: \n',fenwickMatrix);
         return fenwickMatrix;
