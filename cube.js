@@ -13,34 +13,23 @@ function controller() {
             var operations = parseOperation(dimension, parsedData.data[i].queries);
             var flagForDiagonal = operations.pop();
             // console.log("operations: \n",operations);
-            if (flagForDiagonal) {
-                var matrix = new fenwickDiagonal(dimension);
+                var matrix = flagForDiagonal ? new fenwickDiagonal(dimension) : new fenwick(dimension);
                 for (var j = 0; j < operations.length; j++) {
-                    var sum1, sum2, sum;
                     if (operations[j].type == 'UPDATE') {
-                        matrix.update(operations[j].x, operations[j].w);
+                        matrix.update(operations[j]);
                     } else {
-                        sum1 = matrix.summation(operations[j].x1 - 1);
-                        sum2 = matrix.summation(operations[j].x2);
-                        sum = sum2 - sum1;
-                        output += sum + "\n";
+                        var coordinates = [{
+                                x: operations[j].x1 - 1,
+                                y: operations[j].y1 - 1,
+                                z: operations[j].z1 - 1
+                            },{
+                                x: operations[j].x2,
+                                y: operations[j].y2,
+                                z: operations[j].z2,
+                            }];
+                        output += matrix.summation(coordinates) + "\n";
                     }
                 }
-            } else {
-                var matrix = new fenwick(dimension);
-                for (var j = 0; j < operations.length; j++) {
-                    var sum1, sum2, sum;
-                    if (operations[j].type == 'UPDATE') {
-                        matrix.update(operations[j].x, operations[j].y, operations[j].z, operations[j].w);
-                    } else {
-                        sum1 = matrix.summation(operations[j].x1 - 1, operations[j].y1 - 1, operations[j].z1 - 1);
-                        sum2 = matrix.summation(operations[j].x2, operations[j].y2, operations[j].z2);
-                        sum = sum2 - sum1;
-                        output += sum + "\n";
-                    }
-                }
-            }
-            // console.log("matrix: \n",matrix.create());
         }
     } else {
         alert(parseInput.error + "\n" + input);
@@ -129,7 +118,7 @@ function parseOperation(dimension, queries) {
         flagQuery2 = true;
     for (var i = 0; i < queries.length; i++) {
         query = queries[i].split(" ");
-        if (query[0] == 'UPDATE' || query[0] == 'Update' || query[0] == 'update') {
+        if (query[0].toLowerCase() == 'update') {
             operation[i] = {
                 'type': 'UPDATE', 
                 'x': query[1], 
@@ -185,9 +174,10 @@ function fenwickDiagonal(dimension) {
     // console.log('diagonal: \n');
     this.dimension = dimension;
     this.fenwickMatrix = [];
-    this.update = function(index, val) {
-        // console.log('index: \n',index);
-        // console.log('val: \n',val);
+    this.update = function(coordinates) {
+        // console.log('index: \n',coordinates.x);
+        index = coordinates.x;
+        val = coordinates.w;
         if (this.fenwickMatrix.length == 0) {
             this.fenwickMatrix = createMatrix(this.dimension);
         }
@@ -200,15 +190,20 @@ function fenwickDiagonal(dimension) {
         } 
         // console.log('update this.fenwickMatrix: \n',this.fenwickMatrix);
     }
-    this.summation = function(x) { 
-        var sum = 0; 
-        for (var row = 0; row < this.fenwickMatrix.length; ++row) { 
-            if (x&1) {
-                sum += this.fenwickMatrix[row][x - 1]; 
+    this.summation = function(coordinates) { 
+        var sums = [];
+        for (coordinate in coordinates) {
+            var sum = 0,
+                x = coordinates[coordinate].x; 
+            for (var row = 0; row < this.fenwickMatrix.length; ++row) {
+                if (x&1) {
+                    sum += this.fenwickMatrix[row][x - 1]; 
+                }
+                x >>= 1; 
             }
-            x >>= 1; 
-        } 
-        return sum; 
+            sums.push(sum);
+        }
+        return sums[1] - sums[0]; 
     }
     function createMatrix(dimension) {
         var fenwickMatrix = [];
@@ -235,7 +230,11 @@ function fenwick(dimension) {
     // console.log('matrix: \n');
     this.dimension = dimension;
     this.fenwickMatrix = [];
-    this.update = function(x, y, z, val) {
+    this.update = function(coordinates) {
+        var x = coordinates.x,
+            y = coordinates.y,
+            z = coordinates.z,
+            val = coordinates.w;
         if (this.fenwickMatrix.length == 0) {
             this.fenwickMatrix = createMatrix(this.dimension);
         }
@@ -261,19 +260,26 @@ function fenwick(dimension) {
         }
         // console.log('update this.fenwickMatrix: \n',this.fenwickMatrix);
     }
-    this.summation = function(x, y, z) { 
-        var sum = 0; 
-        while (z > 0) {
-            while (x > 0) {
-                while (y > 0) {
-                    sum += this.fenwickMatrix[x - 1][y - 1][z - 1]; 
-                    y &= y - 1;
+    this.summation = function(coordinates) { 
+        var sums = [];
+        for (coordinate in coordinates) {
+            var sum = 0, 
+                x = coordinates[coordinate].x,
+                y = coordinates[coordinate].y,
+                z = coordinates[coordinate].z; 
+            while (z > 0) {
+                while (x > 0) {
+                    while (y > 0) {
+                        sum += this.fenwickMatrix[x - 1][y - 1][z - 1]; 
+                        y &= y - 1;
+                    }
+                    x &= x - 1;
                 }
-                x &= x - 1;
+                z &= z - 1;
             }
-            z &= z - 1;
+            sums.push(sum);
         }
-        return sum; 
+        return sums[1] - sums[0];
     }
     function createMatrix(dimension) {
         var fenwickMatrix = [],
