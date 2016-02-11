@@ -171,12 +171,10 @@ function validateEquidistance(x, y, z) {
  *  given the diagonal coordinates.
  */
 function fenwickDiagonal(dimension) {
-    // console.log('diagonal: \n');
     this.dimension = dimension;
     this.fenwickMatrix = [];
     this.update = function(coordinates) {
-        // console.log('index: \n',coordinates.x);
-        index = coordinates.x;
+        index = coordinates.x -1;
         val = coordinates.w;
         if (this.fenwickMatrix.length == 0) {
             this.fenwickMatrix = createMatrix(this.dimension);
@@ -188,7 +186,6 @@ function fenwickDiagonal(dimension) {
             this.fenwickMatrix[row][index] += parseInt(val); 
             index >>= 1; 
         } 
-        // console.log('update this.fenwickMatrix: \n',this.fenwickMatrix);
     }
     this.summation = function(coordinates) { 
         var sums = [];
